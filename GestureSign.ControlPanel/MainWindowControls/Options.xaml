@@ -7,6 +7,7 @@
              xmlns:localization="clr-namespace:GestureSign.Common.Localization;assembly=GestureSign.Common"
              xmlns:common="clr-namespace:GestureSign.ControlPanel.Common"
              xmlns:viewModel="clr-namespace:GestureSign.ControlPanel.ViewModel"
+             xmlns:userControls="clr-namespace:GestureSign.ControlPanel.UserControls"
              mc:Ignorable="d"
              Height="381"
              Width="380"
@@ -140,25 +141,21 @@
                                    OffLabel="{localization:LocalisedText Options.OffLabel}"
                                    Click="MouseSwitch_Click">
             </controls:ToggleSwitch>
-            <TextBlock x:Name="DrawingButtonTextBlock"
-                       Text="{localization:LocalisedText Options.DrawingButton}"
+            <TextBlock x:Name="DrawingBindingTextBlock"
+                       Text="Draw gesture by holding"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Top"
                        FontSize="14"
                        Margin="0,0,0,5"
                        Visibility="{Binding ElementName=MouseSwitch,Path=IsChecked,Converter={StaticResource BooleanToVisibilityConverter}}">
             </TextBlock>
-            <ComboBox x:Name="DrawingButtonComboBox"
-                      ItemsSource="{Binding Source={StaticResource MouseActionDescription},Path=DrawingDescription}"
-                      HorizontalAlignment="Center"
-                      Width="300"
-                      FontSize="14"
-                      Margin="0,5,0,15"
-                      DisplayMemberPath="Value"
-                      SelectedValuePath="Key"
-                      DropDownClosed="DrawingButtonComboBox_DropDownClosed"
-                      Visibility="{Binding ElementName=MouseSwitch,Path=IsChecked,Converter={StaticResource BooleanToVisibilityConverter}}">
-            </ComboBox>
+            <userControls:BindingCaptureBox x:Name="DrawingBindingBox"
+                                            HorizontalAlignment="Center"
+                                            Width="300"
+                                            Margin="0,5,0,15"
+                                            CaptureStarted="DrawingBindingBox_CaptureStarted"
+                                            CaptureEnded="DrawingBindingBox_CaptureEnded"
+                                            Visibility="{Binding ElementName=MouseSwitch,Path=IsChecked,Converter={StaticResource BooleanToVisibilityConverter}}" />
             <controls:ToggleSwitch x:Name="TouchScreenSwitch"
                                    OnLabel="{localization:LocalisedText Options.OnLabel}"
                                    OffLabel="{localization:LocalisedText Options.OffLabel}"

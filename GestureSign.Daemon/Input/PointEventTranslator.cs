@@ -11,16 +11,59 @@ namespace GestureSign.Daemon.Input
     {
         private int _lastPointsCount;
         private HashSet<MouseActions> _pressedMouseButton;
+        private readonly GestureBindingMatcher _bindingMatcher;
+
+        // Position of the last mouse event, cached so keyboard-triggered draws know where to
+        // synthesize the "starting point" from. The raw hook provides mouse coords on every
+        // mouse event but the user's gesture drawing path needs a starting point even when
+        // the trigger is keyboard-based (no initial mouse-down to supply one).
+        private System.Drawing.Point _lastMousePoint;
 
         internal Devices SourceDevice { get; private set; }
 
         internal PointEventTranslator(InputProvider inputProvider)
         {
             _pressedMouseButton = new HashSet<MouseActions>();
+            _bindingMatcher = inputProvider.BindingMatcher;
             inputProvider.PointsIntercepted += TranslateTouchEvent;
             inputProvider.LowLevelMouseHook.MouseDown += LowLevelMouseHook_MouseDown;
             inputProvider.LowLevelMouseHook.MouseMove += LowLevelMouseHook_MouseMove;
             inputProvider.LowLevelMouseHook.MouseUp += LowLevelMouseHook_MouseUp;
+
+            // Keyboard-trigger path: when a keyboard binding activates, start a draw at the
+            // current cursor position; when it deactivates, end the draw. Mouse-trigger path
+            // is handled inline in the MouseDown/MouseUp callbacks below (they still need to
+            // call the matcher, which in turn fires these same events for mouse bindings).
+            _bindingMatcher.Activated += OnBindingActivated;
+            _bindingMatcher.Deactivated += OnBindingDeactivated;
+        }
+
+        private void OnBindingActivated()
+        {
+            // Only fire the keyboard-triggered OnPointDown here for keyboard bindings. For
+            // mouse bindings, the MouseDown handler already synthesized the InputPointsEventArgs
+            // with the correct coordinates before the matcher fired its Activated event.
+            if (_bindingMatcher == null) return;
+            if (_pressedMouseButton.Count > 0) return;
+
+            // Check if the active binding is a mouse binding; if so, the mouse callback
+            // already dispatched the point-down event.
+            var binding = GestureSign.Common.Configuration.AppConfig.DrawingBinding;
+            if (binding.Kind != GestureBindingKind.KeyboardKey) return;
+
+            var args = new InputPointsEventArgs(new List<InputPoint>(new[] { new InputPoint(1, _lastMousePoint) }), Devices.Mouse);
+            OnPointDown(args);
+        }
+
+        private void OnBindingDeactivated()
+        {
+            if (_bindingMatcher == null) return;
+
+            var binding = GestureSign.Common.Configuration.AppConfig.DrawingBinding;
+            if (binding.Kind != GestureBindingKind.KeyboardKey) return;
+
+            var args = new InputPointsEventArgs(new List<InputPoint>(new[] { new InputPoint(1, _lastMousePoint) }), Devices.Mouse);
+            OnPointUp(args);
         }
 
         #region Custom Events
@@ -59,30 +102,51 @@ namespace GestureSign.Daemon.Input
 
         private void LowLevelMouseHook_MouseUp(LowLevelMouseMessage mouseMessage, ref bool handled)
         {
-            if ((MouseActions)mouseMessage.Button == AppConfig.DrawingButton)
+            _lastMousePoint = mouseMessage.Point;
+            var button = (MouseActions)mouseMessage.Button;
+
+            // Feed the matcher so modifier tracking and state bookkeeping stay in sync.
+            // The matcher returns true when this event was the "main key" of an active binding
+            // and the event should be swallowed. For mouse-up, "active before" means we were
+            // drawing; the matcher will flip _isActive to false on this call and return true.
+            bool shouldSwallow = _bindingMatcher != null
+                                 && _bindingMatcher.OnMouseButton(button, isDown: false);
+
+            if (shouldSwallow)
             {
                 var args = new InputPointsEventArgs(new List<InputPoint>(new[] { new InputPoint(1, mouseMessage.Point) }), Devices.Mouse);
                 OnPointUp(args);
                 handled = args.Handled;
             }
-            _pressedMouseButton.Remove((MouseActions)mouseMessage.Button);
+            _pressedMouseButton.Remove(button);
         }
 
         private void LowLevelMouseHook_MouseMove(LowLevelMouseMessage mouseMessage, ref bool handled)
         {
+            _lastMousePoint = mouseMessage.Point;
             var args = new InputPointsEventArgs(new List<InputPoint>(new[] { new InputPoint(1, mouseMessage.Point) }), Devices.Mouse);
             OnPointMove(args);
         }
 
         private void LowLevelMouseHook_MouseDown(LowLevelMouseMessage mouseMessage, ref bool handled)
         {
-            if ((MouseActions)mouseMessage.Button == AppConfig.DrawingButton && _pressedMouseButton.Count == 0)
+            _lastMousePoint = mouseMessage.Point;
+            var button = (MouseActions)mouseMessage.Button;
+
+            // Feed the matcher. It updates modifier state internally (for mouse bindings with
+            // modifier requirements like "Ctrl+MiddleClick") and returns true if this press
+            // activated the full binding.
+            bool shouldSwallow = _bindingMatcher != null
+                                 && _bindingMatcher.OnMouseButton(button, isDown: true)
+                                 && _pressedMouseButton.Count == 0;
+
+            if (shouldSwallow)
             {
                 var args = new InputPointsEventArgs(new List<InputPoint>(new[] { new InputPoint(1, mouseMessage.Point) }), Devices.Mouse);
                 OnPointDown(args);
                 handled = args.Handled;
             }
-            _pressedMouseButton.Add((MouseActions)mouseMessage.Button);
+            _pressedMouseButton.Add(button);
         }
 
         private void TranslateTouchEvent(object sender, RawPointsDataMessageEventArgs e)

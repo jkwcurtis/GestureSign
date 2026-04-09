@@ -55,10 +55,11 @@ namespace GestureSign.ControlPanel.MainWindowControls
                 TouchScreenSwitch.IsChecked = AppConfig.RegisterTouchScreen;
                 IgnoreFullScreenSwitch.IsChecked = AppConfig.IgnoreFullScreen;
                 IgnoreTouchInputWhenUsingPenSwitch.IsChecked = AppConfig.IgnoreTouchInputWhenUsingPen;
-                if (AppConfig.DrawingButton != MouseActions.None)
+                var currentBinding = AppConfig.DrawingBinding;
+                if (!currentBinding.IsEmpty)
                 {
                     MouseSwitch.IsChecked = true;
-                    DrawingButtonComboBox.SelectedValue = AppConfig.DrawingButton;
+                    DrawingBindingBox.Binding = currentBinding;
                 }
 
                 LanguageComboBox.ItemsSource = LocalizationProvider.Instance.GetLanguageList("ControlPanel");
@@ -344,13 +345,38 @@ namespace GestureSign.ControlPanel.MainWindowControls
         private void MouseSwitch_Click(object sender, RoutedEventArgs e)
         {
             if (MouseSwitch.IsChecked != null && MouseSwitch.IsChecked.Value)
-                DrawingButtonComboBox.SelectedValue = AppConfig.DrawingButton = MouseActions.Right;
-            else AppConfig.DrawingButton = MouseActions.None;
+            {
+                // Default the binding to Right Button on first enable. If there's already a
+                // binding set, keep it — user might be toggling this off and on repeatedly.
+                var existing = AppConfig.DrawingBinding;
+                var newBinding = existing.IsEmpty
+                    ? GestureBinding.FromLegacyMouseAction(MouseActions.Right)
+                    : existing;
+                AppConfig.DrawingBinding = newBinding;
+                DrawingBindingBox.Binding = newBinding;
+            }
+            else
+            {
+                AppConfig.DrawingBinding = GestureBinding.None;
+                DrawingBindingBox.Binding = GestureBinding.None;
+            }
         }
 
-        private void DrawingButtonComboBox_DropDownClosed(object sender, EventArgs e)
+        private void DrawingBindingBox_CaptureStarted(object sender, EventArgs e)
         {
-            AppConfig.DrawingButton = (MouseActions)DrawingButtonComboBox.SelectedValue;
+            // Tell the daemon to suspend its matcher so the keys we're about to capture don't
+            // accidentally trigger a gesture draw over the Options window.
+            NamedPipe.SendMessageAsync(IpcCommands.PauseBindingCapture, GestureSign.Common.Constants.Daemon, wait: false);
+        }
+
+        private void DrawingBindingBox_CaptureEnded(object sender, EventArgs e)
+        {
+            // Resume matching. If the capture committed a new binding, the Binding property
+            // already fired via two-way data binding — persist it to AppConfig here so the
+            // daemon picks it up via the config-changed event. If it cancelled, we write the
+            // same (unchanged) value, which is a no-op.
+            AppConfig.DrawingBinding = DrawingBindingBox.Binding ?? GestureBinding.None;
+            NamedPipe.SendMessageAsync(IpcCommands.ResumeBindingCapture, GestureSign.Common.Constants.Daemon, wait: false);
         }
 
         private void TouchScreenSwitch_Click(object sender, RoutedEventArgs e)

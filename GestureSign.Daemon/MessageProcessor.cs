@@ -42,6 +42,14 @@ namespace GestureSign.Daemon
                     case IpcCommands.StartControlPanel:
                         TrayManager.StartControlPanel();
                         break;
+                    case IpcCommands.PauseBindingCapture:
+                        // Suspend matcher so the user can press the currently-bound keys in the
+                        // Options panel's capture UI without ghost-firing a gesture draw.
+                        PointCapture.Instance.SetBindingCaptureSuspended(true);
+                        break;
+                    case IpcCommands.ResumeBindingCapture:
+                        PointCapture.Instance.SetBindingCaptureSuspended(false);
+                        break;
                 }
             }, null);
 

@@ -129,6 +129,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Input\PointCapture.cs" />
     <Compile Include="Input\PointEventTranslator.cs" />
+    <Compile Include="Input\GestureBindingMatcher.cs" />
     <Compile Include="Surface\SurfaceForm.cs">
       <SubType>Form</SubType>
     </Compile>

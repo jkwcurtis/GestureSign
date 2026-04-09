@@ -16,6 +16,8 @@ namespace GestureSign.Daemon.Input
         private int _stateUpdating;
 
         public LowLevelMouseHook LowLevelMouseHook;
+        public LowLevelKeyboardHook LowLevelKeyboardHook;
+        public GestureBindingMatcher BindingMatcher;
         public event RawPointsDataMessageEventHandler PointsIntercepted;
 
         public InputProvider()
@@ -24,11 +26,23 @@ namespace GestureSign.Daemon.Input
             _messageWindow.PointsIntercepted += MessageWindow_PointsIntercepted;
 
             AppConfig.ConfigChanged += AppConfig_ConfigChanged;
+
             LowLevelMouseHook = new LowLevelMouseHook();
-            if (AppConfig.DrawingButton != MouseActions.None)
+            LowLevelKeyboardHook = new LowLevelKeyboardHook();
+            BindingMatcher = new GestureBindingMatcher();
+            BindingMatcher.UpdateBinding(AppConfig.DrawingBinding);
+
+            // The keyboard hook feeds modifier and main-key events into the matcher. It's installed
+            // whenever the binding requires it (keyboard bindings always, mouse bindings with modifiers).
+            LowLevelKeyboardHook.KeyIntercepted += OnKeyboardKeyIntercepted;
+
+            var binding = AppConfig.DrawingBinding;
+            if (!binding.IsEmpty)
                 Task.Delay(1000).ContinueWith((t) =>
                 {
                     LowLevelMouseHook.StartHook();
+                    if (BindingMatcher.BindingRequiresKeyboardHook)
+                        LowLevelKeyboardHook.StartHook();
                 }, TaskScheduler.FromCurrentSynchronizationContext());
 
 
@@ -39,11 +53,36 @@ namespace GestureSign.Daemon.Input
                 () => HidDevice.EnumerateDevices());
         }
 
+        /// <summary>
+        /// Forwards keyboard hook events to the matcher. The matcher decides whether to swallow
+        /// the event (only for a matching main key); modifier keys always pass through.
+        /// </summary>
+        private void OnKeyboardKeyIntercepted(int msg, int vkCode, int scanCode, int flags, int time, IntPtr dwExtraInfo, ref bool handled)
+        {
+            // WM_KEYDOWN = 0x100, WM_SYSKEYDOWN = 0x104, WM_KEYUP = 0x101, WM_SYSKEYUP = 0x105.
+            bool isDown = msg == 0x100 || msg == 0x104;
+            bool isUp = msg == 0x101 || msg == 0x105;
+            if (!isDown && !isUp) return;
+
+            bool swallow = BindingMatcher.OnKeyboardKey(vkCode, isDown);
+            if (swallow)
+                handled = true;
+        }
+
         private void AppConfig_ConfigChanged(object sender, System.EventArgs e)
         {
-            if (AppConfig.DrawingButton != MouseActions.None)
+            var binding = AppConfig.DrawingBinding;
+            BindingMatcher.UpdateBinding(binding);
+
+            if (!binding.IsEmpty)
                 LowLevelMouseHook.StartHook();
-            else LowLevelMouseHook.Unhook();
+            else
+                LowLevelMouseHook.Unhook();
+
+            if (BindingMatcher.BindingRequiresKeyboardHook)
+                LowLevelKeyboardHook.StartHook();
+            else
+                LowLevelKeyboardHook.Unhook();
 
             UpdateDeviceState();
         }
@@ -104,6 +143,7 @@ namespace GestureSign.Daemon.Input
                 SystemEvents.SessionSwitch -= OnSessionSwitch;
                 SystemEvents.PowerModeChanged -= OnPowerModeChanged;
                 LowLevelMouseHook?.Unhook();
+                LowLevelKeyboardHook?.Unhook();
                 _deviceStateServer.Dispose();
                 disposedValue = true;
             }

@@ -119,6 +119,7 @@
     <Compile Include="Gestures\PointPattern.cs" />
     <Compile Include="Input\Devices.cs" />
     <Compile Include="Input\DeviceStates.cs" />
+    <Compile Include="Input\GestureBinding.cs" />
     <Compile Include="Input\RecognitionEventArgs.cs" />
     <Compile Include="Input\RecognitionEventHandler.cs" />
     <Compile Include="ILoadable.cs" />

@@ -1,0 +1,67 @@
+<UserControl x:Class="GestureSign.ControlPanel.UserControls.BindingCaptureBox"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:localization="clr-namespace:GestureSign.Common.Localization;assembly=GestureSign.Common"
+             Focusable="True"
+             KeyboardNavigation.IsTabStop="True"
+             Background="Transparent">
+    <Border x:Name="OuterBorder"
+            BorderThickness="1"
+            BorderBrush="{DynamicResource AccentColorBrush3}"
+            CornerRadius="2"
+            Padding="8,6"
+            MinHeight="36">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <!-- Idle view: shows the current binding as text. -->
+            <StackPanel x:Name="IdlePanel"
+                        Grid.Column="0"
+                        Orientation="Horizontal"
+                        VerticalAlignment="Center">
+                <TextBlock x:Name="CurrentBindingValueText"
+                           Text="Right Button"
+                           FontSize="14"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <!-- Capturing view: replaces the idle text with a prompt. Hidden by default. -->
+            <StackPanel x:Name="CapturingPanel"
+                        Grid.Column="0"
+                        Orientation="Horizontal"
+                        VerticalAlignment="Center"
+                        Visibility="Collapsed">
+                <TextBlock x:Name="CapturePromptText"
+                           Text="Press any key or mouse button..."
+                           FontSize="14"
+                           FontStyle="Italic"
+                           Foreground="{DynamicResource AccentColorBrush}"
+                           VerticalAlignment="Center" />
+                <TextBlock x:Name="CaptureCancelHintText"
+                           Text="  (Esc to cancel)"
+                           FontSize="12"
+                           Foreground="Gray"
+                           VerticalAlignment="Center" />
+            </StackPanel>
+
+            <Button x:Name="ChangeButton"
+                    Grid.Column="1"
+                    Content="Change"
+                    Padding="12,4"
+                    Margin="8,0,0,0"
+                    Click="ChangeButton_Click" />
+
+            <Button x:Name="ClearButton"
+                    Grid.Column="2"
+                    Content="✕"
+                    ToolTip="Clear binding"
+                    Padding="8,4"
+                    Margin="4,0,0,0"
+                    Click="ClearButton_Click" />
+        </Grid>
+    </Border>
+</UserControl>

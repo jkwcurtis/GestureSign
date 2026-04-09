@@ -227,6 +227,48 @@ namespace GestureSign.Common.Configuration
             }
         }
 
+        /// <summary>
+        /// The current gesture-activation binding: any key, any mouse button, or any
+        /// Ctrl/Shift/Alt/Win-prefixed combination of either. Replaces the legacy
+        /// <see cref="DrawingButton"/> enum.
+        ///
+        /// Migration: if no serialized binding is stored yet, the getter synthesizes one
+        /// from the legacy <see cref="DrawingButton"/> value on first read and returns it
+        /// without writing to disk — existing installs see their old "Right Button" setting
+        /// automatically. The first actual user change via the UI commits the new format.
+        ///
+        /// The setter also mirrors mouse-binding values back into <see cref="DrawingButton"/>
+        /// so that downgrading to upstream GestureSign (which only reads that legacy key)
+        /// leaves the user's preference intact for mouse-only bindings.
+        /// </summary>
+        public static GestureBinding DrawingBinding
+        {
+            get
+            {
+                var serialized = GetValue(nameof(DrawingBinding), string.Empty);
+                if (!string.IsNullOrEmpty(serialized))
+                    return GestureBinding.Parse(serialized);
+
+                // Lazy migration path: no new-format value on disk, so derive from the legacy
+                // DrawingButton enum. This does NOT write anything — writes happen only when
+                // the user actively changes the binding via the UI.
+                var legacy = (MouseActions)GetValue(nameof(DrawingButton), 0);
+                return legacy == MouseActions.None
+                    ? GestureBinding.None
+                    : GestureBinding.FromLegacyMouseAction(legacy);
+            }
+            set
+            {
+                var binding = value ?? GestureBinding.None;
+                SetValue(nameof(DrawingBinding), binding.Serialize());
+                // Mirror mouse bindings to the legacy key for downgrade safety. Keyboard
+                // bindings clear the legacy value so upstream sees "no mouse gesture set".
+                DrawingButton = binding.Kind == GestureBindingKind.MouseButton
+                    ? (MouseActions)binding.MainCode
+                    : MouseActions.None;
+            }
+        }
+
         public static bool RegisterTouchPad
         {
             get

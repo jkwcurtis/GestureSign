@@ -175,6 +175,9 @@
     <Compile Include="UserControls\ApplicationSelector.xaml.cs">
       <DependentUpon>ApplicationSelector.xaml</DependentUpon>
     </Compile>
+    <Compile Include="UserControls\BindingCaptureBox.xaml.cs">
+      <DependentUpon>BindingCaptureBox.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Dialogs\LogWindow.xaml.cs">
       <DependentUpon>LogWindow.xaml</DependentUpon>
     </Compile>
@@ -250,6 +253,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="UserControls\ApplicationSelector.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="UserControls\BindingCaptureBox.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -34,6 +34,17 @@ namespace GestureSign.Daemon.Input
         // Create new Touch hook control to capture global input from Touch, and create an event translator to get formal events
         private readonly PointEventTranslator _pointEventTranslator;
         private readonly InputProvider _inputProvider;
+
+        /// <summary>
+        /// Exposed so the IPC layer can temporarily suspend gesture-binding matching while
+        /// the ControlPanel's BindingCaptureBox is in capture mode. Returns null if the
+        /// input provider hasn't been constructed yet.
+        /// </summary>
+        public void SetBindingCaptureSuspended(bool suspended)
+        {
+            if (_inputProvider != null && _inputProvider.BindingMatcher != null)
+                _inputProvider.BindingMatcher.Suspend = suspended;
+        }
         private readonly PointerInputTargetWindow _pointerInputTargetWindow;
         private readonly List<IPointPattern> _pointPatternCache = new List<IPointPattern>();
         private readonly System.Threading.Timer _blockTouchDelayTimer;
