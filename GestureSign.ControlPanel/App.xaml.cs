@@ -14,7 +14,8 @@ using System.Security.Principal;
 using System.Threading;
 using System.Windows;
 using System.Windows.Threading;
-using Windows.Management.Deployment;
+// Windows.Management.Deployment removed — store-version redirect stubbed to always return false.
+// See docs/superpowers/specs/2026-04-08-custom-gesture-binding-design.md.
 
 namespace GestureSign.ControlPanel
 {
@@ -111,30 +112,10 @@ namespace GestureSign.ControlPanel
 
         private bool TryLaunchStoreVersion()
         {
-            using (var currentUser = WindowsIdentity.GetCurrent())
-            {
-                if (currentUser.User != null)
-                {
-                    var sid = currentUser.User.ToString();
-                    PackageManager packageManager = new PackageManager();
-                    var storeVersion = packageManager.FindPackagesForUserWithPackageTypes(sid, "41908Transpy.GestureSign", "CN=AF41F066-0041-4D13-9D95-9DAB66112B0A", PackageTypes.Main).FirstOrDefault();
-                    if (storeVersion != null)
-                    {
-                        using (Process explorer = new Process
-                        {
-                            StartInfo =
-                                    {
-                                        FileName = "explorer.exe", Arguments = @"shell:AppsFolder\" + "41908Transpy.GestureSign_f441wk0cxr8zc!GestureSign"
-                                    }
-                        })
-                        {
-                            explorer.Start();
-                        }
-                        Current.Shutdown();
-                        return true;
-                    }
-                }
-            }
+            // Stubbed: store-version redirect disabled in this fork because it requires
+            // a Windows 10 SDK Windows.winmd not available in NuGet-only build environments.
+            // Effect: standalone app always launches directly. Users with the Microsoft Store
+            // version of upstream GestureSign installed won't be auto-redirected.
             return false;
         }
 

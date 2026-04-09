@@ -85,10 +85,8 @@
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
     <Reference Include="System.Xml" />
-    <Reference Include="Windows, Version=255.255.255.255, Culture=neutral, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>C:\Program Files (x86)\Windows Kits\10\UnionMetadata\Windows.winmd</HintPath>
-    </Reference>
+    <!-- Windows.winmd reference removed for LaunchApp plugin — build env lacks Windows 10 SDK.
+         See docs/superpowers/specs/2026-04-08-custom-gesture-binding-design.md. -->
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
@@ -110,10 +108,7 @@
     <Compile Include="KeyDownKeyUp\KeyDownKeyUpUI.xaml.cs">
       <DependentUpon>KeyDownKeyUpUI.xaml</DependentUpon>
     </Compile>
-    <Compile Include="LaunchApp\LaunchApp.cs" />
-    <Compile Include="LaunchApp\LaunchAppView.xaml.cs">
-      <DependentUpon>LaunchAppView.xaml</DependentUpon>
-    </Compile>
+    <!-- LaunchApp plugin excluded — see docs/superpowers/specs/2026-04-08-custom-gesture-binding-design.md -->
     <Compile Include="MouseActions\ClickPositions.cs" />
     <Compile Include="MouseActions\Crosshair.xaml.cs">
       <DependentUpon>Crosshair.xaml</DependentUpon>
@@ -218,10 +213,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="KeyDownKeyUp\KeyDownKeyUpUI.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="LaunchApp\LaunchAppView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

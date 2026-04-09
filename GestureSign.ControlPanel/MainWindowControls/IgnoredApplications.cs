@@ -3,7 +3,6 @@ using GestureSign.Common.Configuration;
 using GestureSign.Common.Gestures;
 using GestureSign.ControlPanel.Common;
 using GestureSign.ControlPanel.Dialogs;
-using IWshRuntimeLibrary;
 using MahApps.Metro.Controls.Dialogs;
 using System;
 using System.Collections.Generic;
@@ -132,11 +131,14 @@ namespace GestureSign.ControlPanel.MainWindowControls
                                 Dispatcher.InvokeAsync(() => lstIgnoredApplications.SelectedItem = ApplicationManager.Instance.AddApplication(new IgnoredApp() { IsEnabled = true }, file), DispatcherPriority.Input);
                                 break;
                             case ".lnk":
-                                WshShell shell = new WshShell();
-                                IWshShortcut link = (IWshShortcut)shell.CreateShortcut(file);
-                                if (Path.GetExtension(link.TargetPath).ToLower() == ".exe")
                                 {
-                                    Dispatcher.InvokeAsync(() => lstIgnoredApplications.SelectedItem = ApplicationManager.Instance.AddApplication(new IgnoredApp() { IsEnabled = true }, link.TargetPath), DispatcherPriority.Input);
+                                    dynamic shell = Activator.CreateInstance(Type.GetTypeFromProgID("WScript.Shell"));
+                                    dynamic link = shell.CreateShortcut(file);
+                                    string linkTarget = link.TargetPath;
+                                    if (Path.GetExtension(linkTarget).ToLower() == ".exe")
+                                    {
+                                        Dispatcher.InvokeAsync(() => lstIgnoredApplications.SelectedItem = ApplicationManager.Instance.AddApplication(new IgnoredApp() { IsEnabled = true }, linkTarget), DispatcherPriority.Input);
+                                    }
                                 }
                                 break;
                             case GestureSign.Common.Constants.ArchivesExtension:

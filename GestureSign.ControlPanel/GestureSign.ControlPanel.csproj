@@ -142,9 +142,8 @@
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
     <Reference Include="UIAutomationProvider" />
-    <Reference Include="Windows">
-      <HintPath>C:\Program Files (x86)\Windows Kits\10\UnionMetadata\Windows.winmd</HintPath>
-    </Reference>
+    <!-- Windows.winmd reference removed; TryLaunchStoreVersion is stubbed.
+         See docs/superpowers/specs/2026-04-08-custom-gesture-binding-design.md. -->
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -368,17 +367,9 @@
       <Name>ManagedWinapi</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <COMReference Include="IWshRuntimeLibrary">
-      <Guid>{F935DC20-1CF0-11D0-ADB9-00C04FD58A0B}</Guid>
-      <VersionMajor>1</VersionMajor>
-      <VersionMinor>0</VersionMinor>
-      <Lcid>0</Lcid>
-      <WrapperTool>tlbimp</WrapperTool>
-      <Isolated>False</Isolated>
-      <EmbedInteropTypes>True</EmbedInteropTypes>
-    </COMReference>
-  </ItemGroup>
+  <!-- IWshRuntimeLibrary COM reference removed; shortcut handling uses late-bound
+       WScript.Shell via Type.GetTypeFromProgID + dynamic instead. This avoids needing
+       TlbImp.exe which isn't shipped with the NuGet-only build toolchain. -->
   <ItemGroup>
     <Resource Include="Resources\normal.ico" />
   </ItemGroup>
